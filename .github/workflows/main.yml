@@ -1,0 +1,44 @@
+# .github/workflows/main.yml
+name: ChiperOS Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install PlatformIO
+      run: |
+        python -m pip install --upgrade pip
+        pip install platformio
+    
+    - name: Build firmware
+      run: pio run
+    
+    - name: Upload firmware artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: chiperos-firmware
+        path: .pio/build/esp32-c3-super-mini/firmware.bin
+    
+    - name: Upload to Release
+      if: github.event_name == 'release'
+      uses: softprops/action-gh-release@v2
+      with:
+        files: .pio/build/esp32-c3-super-mini/firmware.bin
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
